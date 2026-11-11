@@ -1,0 +1,96 @@
+name: Build MeCarcont APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Generate launcher icons
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from PIL import Image, ImageOps
+          from pathlib import Path
+
+          root = Path("app/src/main/res")
+          source = Image.open("app_icon_source.jpg").convert("RGBA")
+
+          sizes = {
+              "mipmap-mdpi": 48,
+              "mipmap-hdpi": 72,
+              "mipmap-xhdpi": 96,
+              "mipmap-xxhdpi": 144,
+              "mipmap-xxxhdpi": 192,
+          }
+
+          for folder, size in sizes.items():
+              d = root / folder
+              d.mkdir(parents=True, exist_ok=True)
+              canvas = Image.new("RGBA", (size, size), "#121212")
+              icon = ImageOps.contain(source, (size-8, size-8))
+              canvas.alpha_composite(
+                  icon,
+                  ((size-icon.width)//2, (size-icon.height)//2)
+              )
+              canvas.save(d / "ic_launcher.png")
+
+          d = root / "mipmap-anydpi-v26"
+          d.mkdir(parents=True, exist_ok=True)
+
+          fg = Image.new("RGBA", (432, 432), (0,0,0,0))
+          icon = ImageOps.contain(source, (360, 360))
+          fg.alpha_composite(
+              icon,
+              ((432-icon.width)//2, (432-icon.height)//2)
+          )
+          fg.save(d / "ic_launcher_foreground.png")
+          PY
+
+      - name: Create adaptive icon resources
+        run: |
+          mkdir -p app/src/main/res/values
+          cat > app/src/main/res/values/ic_launcher_background.xml <<'XML'
+          <resources>
+              <color name="ic_launcher_background">#121212</color>
+          </resources>
+          XML
+
+          cat > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'XML'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/ic_launcher_background"/>
+              <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+          </adaptive-icon>
+          XML
+
+      - name: Build Debug APK
+        run: gradle --no-daemon --stacktrace assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MeCarcont-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
