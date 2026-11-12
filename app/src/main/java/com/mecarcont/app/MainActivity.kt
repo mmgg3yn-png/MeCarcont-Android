@@ -22,7 +22,18 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import kotlin.math.cos
+import kotlin.math.sin
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.KeyboardOptions
 import java.math.BigDecimal
@@ -164,6 +175,92 @@ fun Key(label: String, bg: Int, tc: Int, font: FontFamily, size: Float,
 }
 
 @Composable
+fun IconKey(bg: Int, modifier: Modifier, onClick: () -> Unit, content: @Composable () -> Unit) {
+    Box(
+        modifier.padding(4.dp).clip(RoundedCornerShape(18.dp))
+            .background(Color(bg)).clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) { content() }
+}
+
+// ---- أيقونات مرسومة حسب التخطيط ----
+@Composable
+fun ClockIcon(c: Color, box: Dp = 30.dp) {
+    Canvas(Modifier.size(box)) {
+        val w = this.size.width; val sw = w * 0.09f
+        drawCircle(c, radius = w * 0.45f, style = Stroke(sw))
+        drawLine(c, Offset(w / 2, w / 2), Offset(w / 2, w * 0.25f), sw, StrokeCap.Round)
+        drawLine(c, Offset(w / 2, w / 2), Offset(w * 0.7f, w * 0.62f), sw, StrokeCap.Round)
+    }
+}
+
+@Composable
+fun RulerIcon(c: Color, box: Dp = 30.dp) {
+    Canvas(Modifier.size(box)) {
+        val w = this.size.width; val sw = w * 0.07f
+        rotate(-45f, Offset(w / 2, w / 2)) {
+            drawRoundRect(c, Offset(w * 0.02f, w * 0.3f), Size(w * 0.96f, w * 0.4f),
+                CornerRadius(w * 0.05f), style = Stroke(sw))
+            for (i in 1..5) {
+                val x = w * 0.02f + w * 0.96f * i / 6f
+                val y2 = if (i % 2 == 0) w * 0.52f else w * 0.46f
+                drawLine(c, Offset(x, w * 0.3f), Offset(x, y2), sw * 0.8f)
+            }
+        }
+    }
+}
+
+@Composable
+fun CornerIcon(c: Color, box: Dp = 30.dp) {
+    Canvas(Modifier.size(box)) {
+        val w = this.size.width; val sw = w * 0.1f
+        val p = Path().apply {
+            moveTo(w * 0.2f, w * 0.8f); lineTo(w * 0.2f, w * 0.2f); lineTo(w * 0.68f, w * 0.2f)
+        }
+        drawPath(p, c, style = Stroke(sw, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawCircle(c, w * 0.07f, Offset(w * 0.75f, w * 0.75f))
+    }
+}
+
+@Composable
+fun DeleteIcon(c: Color, box: Dp = 34.dp) {
+    Canvas(Modifier.size(box)) {
+        val w = this.size.width; val sw = w * 0.08f; val cx = w / 2; val r = w * 0.38f
+        drawArc(c, startAngle = -50f, sweepAngle = -270f, useCenter = false,
+            topLeft = Offset(cx - r, cx - r), size = Size(2 * r, 2 * r),
+            style = Stroke(sw, cap = StrokeCap.Round))
+        val th = Math.toRadians(40.0)
+        val px = cx + r * cos(th).toFloat(); val py = cx + r * sin(th).toFloat()
+        val tx = sin(th).toFloat(); val ty = -cos(th).toFloat()
+        val nx = -ty; val ny = tx; val h = r * 0.55f; val b = r * 0.4f
+        val head = Path().apply {
+            moveTo(px + tx * h, py + ty * h)
+            lineTo(px + nx * b, py + ny * b)
+            lineTo(px - nx * b, py - ny * b)
+            close()
+        }
+        drawPath(head, c)
+        val k = r * 0.3f
+        drawLine(c, Offset(cx - k, cx - k), Offset(cx + k, cx + k), sw, StrokeCap.Round)
+        drawLine(c, Offset(cx + k, cx - k), Offset(cx - k, cx + k), sw, StrokeCap.Round)
+    }
+}
+
+@Composable
+fun AnsIcon(c: Color, box: Dp = 34.dp) {
+    Canvas(Modifier.size(box)) {
+        val w = this.size.width; val sw = w * 0.07f
+        drawRoundRect(c, Offset(w * 0.08f, w * 0.2f), Size(w * 0.34f, w * 0.4f),
+            CornerRadius(w * 0.05f), style = Stroke(sw))
+        drawRoundRect(c, Offset(w * 0.6f, w * 0.58f), Size(w * 0.3f, w * 0.3f),
+            CornerRadius(w * 0.05f), style = Stroke(sw))
+        drawLine(c, Offset(w * 0.45f, w * 0.3f), Offset(w * 0.62f, w * 0.5f), sw, StrokeCap.Round)
+        drawLine(c, Offset(w * 0.62f, w * 0.5f), Offset(w * 0.52f, w * 0.49f), sw, StrokeCap.Round)
+        drawLine(c, Offset(w * 0.62f, w * 0.5f), Offset(w * 0.58f, w * 0.4f), sw, StrokeCap.Round)
+    }
+}
+
+@Composable
 fun CalculatorApp() {
     val ctx = LocalContext.current
     var theme by remember { mutableStateOf(loadTheme(ctx)) }
@@ -174,6 +271,7 @@ fun CalculatorApp() {
     val history = remember { mutableStateListOf<Pair<String, String>>() }
     var dialog by remember { mutableStateOf(0) }       // 0 لا شيء، 1 سجل، 2 تحويل، 3 تخصيص
     val font = fonts[theme.font].second
+    val lineColor = Color(theme.text).copy(alpha = 0.35f)
 
     fun input(t: String) {
         error = false
@@ -212,26 +310,36 @@ fun CalculatorApp() {
         listOf("7", "8", "9"), listOf("√", "0", "x²")
     )
     val right = listOf(
-        listOf("×", "÷"), listOf("−", "+"), listOf("⌫", "."), listOf("C", "%")
+        listOf("×", "÷"), listOf("−", "+"), listOf("Ans", "."), listOf("C", "%")
     )
 
     Column(
         Modifier.fillMaxSize().background(Color(theme.bg)).systemBarsPadding().padding(8.dp)
     ) {
-        // الشريط العلوي: سجل - تحويل - تخصيص
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("🕘" to 1, "📏" to 2, "🎨" to 3).forEach { (icon, id) ->
+        // الشريط العلوي: سجل - تحويل - تخصيص (أيقونات مرسومة)
+        Row(
+            Modifier.padding(2.dp).border(2.dp, lineColor, RoundedCornerShape(14.dp)).padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            listOf(1, 2, 3).forEach { id ->
                 Box(
-                    Modifier.size(48.dp).clip(CircleShape).background(Color(theme.func))
-                        .clickable { dialog = id },
+                    Modifier.size(52.dp).clip(RoundedCornerShape(12.dp))
+                        .background(Color(theme.func)).clickable { dialog = id },
                     contentAlignment = Alignment.Center
-                ) { Text(icon, fontSize = 22.sp) }
+                ) {
+                    when (id) {
+                        1 -> ClockIcon(Color(theme.text))
+                        2 -> RulerIcon(Color(theme.text))
+                        else -> CornerIcon(Color(theme.text))
+                    }
+                }
             }
         }
 
         // شاشة العرض
         Column(
-            Modifier.weight(1f).fillMaxWidth().padding(12.dp),
+            Modifier.weight(1f).fillMaxWidth().padding(vertical = 8.dp, horizontal = 2.dp)
+                .border(2.dp, lineColor, RoundedCornerShape(16.dp)).padding(12.dp),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.End
         ) {
@@ -248,7 +356,10 @@ fun CalculatorApp() {
 
         // لوحة الأزرار
         Row(Modifier.fillMaxWidth().weight(1.6f)) {
-            Column(Modifier.weight(3f).fillMaxHeight()) {
+            Column(
+                Modifier.weight(3f).fillMaxHeight().padding(2.dp)
+                    .border(2.dp, lineColor, RoundedCornerShape(20.dp)).padding(2.dp)
+            ) {
                 left.forEach { row ->
                     Row(Modifier.weight(1f).fillMaxWidth()) {
                         row.forEach { k ->
@@ -259,16 +370,30 @@ fun CalculatorApp() {
                 }
             }
             Column(Modifier.weight(2f).fillMaxHeight()) {
-                Row(Modifier.weight(1f).fillMaxWidth()) {
+                Row(
+                    Modifier.weight(1f).fillMaxWidth().padding(2.dp)
+                        .border(2.dp, lineColor, RoundedCornerShape(20.dp)).padding(2.dp)
+                ) {
                     Key("=", theme.eq, theme.text, font, theme.size, Modifier.weight(1f).fillMaxHeight()) { equals() }
-                    Key("Ans", theme.func, theme.text, font, theme.size * 0.7f, Modifier.weight(1f).fillMaxHeight()) { press("Ans") }
+                    IconKey(theme.func, Modifier.weight(1f).fillMaxHeight(), { press("⌫") }) {
+                        DeleteIcon(Color(theme.text))
+                    }
                 }
-                Column(Modifier.weight(4f).fillMaxWidth()) {
+                Column(
+                    Modifier.weight(4f).fillMaxWidth().padding(2.dp)
+                        .border(2.dp, lineColor, RoundedCornerShape(20.dp)).padding(2.dp)
+                ) {
                     right.forEach { row ->
                         Row(Modifier.weight(1f).fillMaxWidth()) {
                             row.forEach { k ->
-                                Key(k, colorFor(k), theme.text, font, theme.size,
-                                    Modifier.weight(1f).fillMaxHeight()) { press(k) }
+                                if (k == "Ans") {
+                                    IconKey(theme.func, Modifier.weight(1f).fillMaxHeight(), { press("Ans") }) {
+                                        AnsIcon(Color(theme.text))
+                                    }
+                                } else {
+                                    Key(k, colorFor(k), theme.text, font, theme.size,
+                                        Modifier.weight(1f).fillMaxHeight()) { press(k) }
+                                }
                             }
                         }
                     }

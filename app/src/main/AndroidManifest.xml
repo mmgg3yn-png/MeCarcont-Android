@@ -3,9 +3,9 @@
 
     <application
         android:allowBackup="true"
-        android:label="Me Carcont"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
+        android:label="Me Carcont"
         android:supportsRtl="true"
         android:theme="@style/Theme.MeCarcont">
         <activity
